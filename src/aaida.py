@@ -25,7 +25,8 @@ HEADERS = {
     "Referer"           : "https://aaida.restosducoeur.org/pickups",
     "Content-Type"      : "application/x-www-form-urlencoded;charset=UTF-8",
     "Origin"            : "https://aaida.restosducoeur.org",
-    "ec-Fetch-Mode"     : "cors",
+    "Sec-Fetch-Dest"    : "empty",
+    "Sec-Fetch-Mode"    : "cors",
     "Sec-Fetch-Site"    : "same-origin",
     "TE"                : "trailers"
 }
@@ -97,19 +98,19 @@ def add_distrib(cookie, csrf, d):
   HEADERS["Cookie"] = "PHPSESSID={}".format(cookie)
   res = req.get(url, headers=HEADERS)
   # don't try this at home :
-  token = re.findall("""ion\\[_token\\]\\\\u0022 value=\\\\u0022([^\\\\]*)""", res.text)[0]
-  return token
+  csrf = re.findall("""ion\\[_token\\]\\\\u0022 value=\\\\u0022([^\\\\]*)""", res.text)[0]
+  return csrf
 
 def post_distrib(cookie, csrf, d):
   """POST : I hope it works."""
   url = "https://aaida.restosducoeur.org/pickup/distribute/{}".format(d["rid"])
   data = "\
-distribution%5Baxis%5D%5B0%5D%5Bweight%5D={}\
-&distribution%5Baxis%5D%5B1%5D%5Bweight%5D={}\
-&distribution%5Baxis%5D%5B2%5D%5Bweight%5D={}\
-&distribution%5Baxis%5D%5B3%5D%5Bweight%5D={}\
-&distribution%5Baxis%5D%5B4%5D%5Bweight%5D={}\
-&distribution%5B_token%5D={}".format(
+distribution%5Baxis%5D%5B0%5D%5Bweight%5D={}&\
+distribution%5Baxis%5D%5B1%5D%5Bweight%5D={}&\
+distribution%5Baxis%5D%5B2%5D%5Bweight%5D={}&\
+distribution%5Baxis%5D%5B3%5D%5Bweight%5D={}&\
+distribution%5Baxis%5D%5B4%5D%5Bweight%5D={}&\
+distribution%5B_token%5D={}".format(
   d["prot"],
   d["side"],
   d["diar"],
@@ -151,11 +152,11 @@ if __name__ == "__main__":
     l["rid"] = rid
     print("rid :", rid)
     time.sleep(sleeping_time)
-    token = add_distrib(cookie, csrf, l)
-    print("token", token)
+    csrf = add_distrib(cookie, csrf, l)
+    print("token", csrf)
     time.sleep(sleeping_time)
     res = post_distrib(cookie, csrf, l)
-    print("Uplodaded :", res)
+    print("Uploaded :", res)
     time.sleep(sleeping_time)
 
   ##res = get_pickups(csrf, cookie)
