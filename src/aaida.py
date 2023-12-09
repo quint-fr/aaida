@@ -18,6 +18,18 @@ import random as rnd
 import requests as req
 import time
 
+HEADERS = {
+    "Accept"            : "*/*",
+    "Accept-Language"   : "en-US,en;q=0.5",
+    "Accept-Encoding"   : "gzip, deflate",
+    "Referer"           : "https://aaida.restosducoeur.org/pickups",
+    "Content-Type"      : "application/x-www-form-urlencoded;charset=UTF-8",
+    "Origin"            : "https://aaida.restosducoeur.org",
+    "ec-Fetch-Mode"     : "cors",
+    "Sec-Fetch-Site"    : "same-origin",
+    "TE"                : "trailers"
+}
+
 def assign_input_spec(d, t, c):
   if d[t]:
     return d[t]
@@ -45,17 +57,6 @@ def get_input(name):
       res.append(l)
   return res
 
-## Used to retrieve providers codes
-def get_providers(cookie):
-  url = "https://aaida.restosducoeur.org/providers"
-  r = req.get(url, headers={"Cookie": "PHPSESSID={}".format(cookie)})
-  s = r.text
-  ns = re.findall('''"Nom">([^<]*)</td>''', s)
-  ps = re.findall('''href="/provider/([0-9]+)''', s)
-  res = [_ for _ in zip(ns, ps)]
-  print(res)
-  return ns, ps
-
 def load_providers():
   with open("prov.db") as f:
     return json.load(f)
@@ -63,7 +64,8 @@ def load_providers():
 def add_pickup(cookie):
   """GET : Let's get it started."""
   url = "https://aaida.restosducoeur.org/pickup/add"
-  res = req.get(url, headers={"Cookie": "PHPSESSID={}".format(cookie)})
+  HEADERS["Cookie"] = cookie
+  res = req.get(url, headers=HEADERS})
   csrf = re.findall("name=\\\\u0022_token\\\\u0022 value=\\\\u0022(.*)\\\\u0022", res.text)[0]
   return csrf
 
@@ -84,18 +86,8 @@ _token={}""".format(
     d["disp"],
     csrf
   )
-  res = req.post(url, data=data, headers={
-    "Cookie"            : "PHPSESSID={}".format(cookie),
-    "Accept"            : "*/*",
-    "Accept-Language"   : "en-US,en;q=0.5",
-    "Accept-Encoding"   : "gzip, deflate",
-    "Referer"           : "https://aaida.restosducoeur.org/pickups",
-    "Content-Type"      : "application/x-www-form-urlencoded;charset=UTF-8",
-    "Origin"            : "https://aaida.restosducoeur.org",
-    "ec-Fetch-Mode"     : "cors",
-    "Sec-Fetch-Site"    : "same-origin",
-    "TE"                : "trailers"
-})
+  HEADERS["Cookie"] = cookie
+  res = req.post(url, data=data, headers=HEADERS)
   #  'User-Agent: Used or abused' 'Accept: */*' -H 'Accept-Language: en-US,en;q=0.5' -H 'Accept-Encoding: gzip, deflate, br' -H 'Referer: https://aaida.restosducoeur.org/pickups' -H 'Content-Type: application/x-www-form-urlencoded;charset=UTF-8' -H 'Origin: https://aaida.restosducoeur.org' -H 'Connection: keep-alive' -H 'Cookie: PHPSESSID=407seiaiksf4h68bl1mspbra94' -H 'Sec-Fetch-Dest: empty' -H 'Sec-Fetch-Mode: cors' -H 'Sec-Fetch-Site: same-origin' -H 'TE: trailers' --data-raw 'createdAt=2023-10-04&provider=6788&providerToAdd%5Bname%5D=&providerToAdd%5Baddress%5D=&providerToAdd%5Bcontact%5D=&declaredWeight=235&realWeight=190&dispatchableWeight=190&_token=bbf78fe294c56da71344e57dc38d8dcf.v3_McnJmlW1nHITvgJooim9Wnd7JmXqJ-EvOWlfYqlM._km7Sh0H-lgWaue2x89t7wYA8POGzBfYtXKGb2KO0j3zJ4s_Jl7YOFZM4w'
   res = res.json()
   return res
@@ -103,8 +95,9 @@ _token={}""".format(
 def add_distrib(cookie, csrf, d):
   """GET : Under the radar."""
   url = "https://aaida.restosducoeur.org/pickup/distribute/{}".format(d["rid"])
-  #res = req.get(url, headers={"Cookie": "PHPSESSID={}".format(cookie)})
-  #token = re.findall("""name="distribution[_token]" value="([^"]*)""", res.text)[0]
+  HEADERS["Cookie"] = cookie
+  res = req.get(url, headers=HEADERS)
+  token = re.findall("""name="distribution[_token]" value="([^"]*)""", res.text)[0]
   return token
 
 def post_distrib(cookie, csrf, d):
@@ -124,7 +117,8 @@ distribution%5Baxis%5D%5B0%5D%5Bweight%5D={}\
   d["misc"],
   csrf
 )
-  #res = req.post(url, headers={"Cookie": "PHPSESSID={}".format(cookie)}, data)
+  HEADERS["Cookie"] = cookie
+  res = req.post(url, headers=HEADERS, data)
   r = {"result" : "test"}
   return res.text
 
@@ -155,12 +149,12 @@ if __name__ == "__main__":
     print("csrf :", csrf)
     time.sleep(sleeping_time)
     rid = post_pickup(cookie, csrf, l)
-    #l["rid"] = rid
+    l["rid"] = rid
     print("rid :", rid)
     time.sleep(sleeping_time)
-  #  token = add_distrib(cookie, csrf, l)
-  #  print("token", token)
-  #  time.sleep(sleeping_time)
+    token = add_distrib(cookie, csrf, l)
+    print("token", token)
+    time.sleep(sleeping_time)
   #  res = post_distrib(cookie, csrf, l)
   #  print("Uplodaded :", res.text)
   #  time.sleep(sleeping_time)
