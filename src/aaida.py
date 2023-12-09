@@ -1,50 +1,22 @@
 #! /usr/bin/env python3
 
-ERROR_MSG = """Usage : $ aaida"""
+ERROR_MSG = """Usage : $ aaida filename cookie
+  filename : path to the semi-Colon Separated Value (.csv) file
+  cookie : cookie name for current session
+"""
 
-import requests as req
-
+# input
 import sys
 import csv
-import random as rnd
 import json
 import re
+
+# craft
+import random as rnd
+
+# net
+import requests as req
 import time
-import json
-
-#"""await fetch("https://aaida.restosducoeur.org/pickup/add", {
-#    "credentials": "include",
-#    "headers": {
-#        "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/118.0",
-#        "Accept": "*/*",
-#        "Accept-Language": "en-US,en;q=0.5",
-#        "Sec-Fetch-Dest": "empty",
-#        "Sec-Fetch-Mode": "cors",
-#        "Sec-Fetch-Site": "same-origin"
-#    },
-#    "referrer": "https://aaida.restosducoeur.org/pickups",
-#    "method": "GET",
-#    "mode": "cors"
-#});"""
-
-#d = {"url" : 'https://aaida.restosducoeur.org/pickup/add',
-#  "header" : {
-#    'User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/118.0',
-#    'Accept: */*',
-#     'Accept-Language: en-US,en;q=0.5',
-#    'Accept-Encoding: gzip, deflate, br',
-#    'Referer: https://aaida.restosducoeur.org/pickups',
-#    'Connection: keep-alive',
-#    'Cookie: PHPSESSID=oj4ffhcjfh7hq0ltoh7a3k6b2q'
-#  }
-#}
-
-def get_csrf():
-  url = "https://aaida.restosducoeur.org/"
-  res = req.get(url)
-  r = re.findall('''input type="hidden" name="_csrf_token"
-                        value="(.*)"''', res.text)
-  return r[0]
 
 def assign_input_spec(d, t, c):
   if d[t]:
@@ -79,7 +51,7 @@ def get_providers(cookie):
   r = req.get(url, headers={"Cookie": "PHPSESSID={}".format(cookie)})
   s = r.text
   ns = re.findall('''"Nom">([^<]*)</td>''', s)
-  ps = re.findall('''/provider/([0-9]+)/''', s)
+  ps = re.findall('''href="/provider/([0-9]+)''', s)
   res = [_ for _ in zip(ns, ps)]
   print(res)
   return ns, ps
@@ -97,13 +69,14 @@ def add_pickup(cookie):
 
 def post_pickup(cookie, csrf, d):
   """POST : Don't mess up the input."""
-  data = '\
+  url = """https://aaida.restosducoeur.org/pickup/add"""
+  data = """\
 createdAt={}&\
-provider={}\
-providerToAdd%5Bname%5D=&providerToAdd%5Baddress%5D=&providerToAdd%5Bcontact%5D=&declaredWeight={}\
-&realWeight={}\
-&dispatchableWeight={}\
-&_token={}'.format(
+provider={}&\
+providerToAdd%5Bname%5D=&providerToAdd%5Baddress%5D=&providerToAdd%5Bcontact%5D=&declaredWeight={}&\
+realWeight={}&\
+dispatchableWeight={}&\
+_token={}""".format(
     d["date"],
     d["code"],
     d["decl"],
@@ -111,10 +84,21 @@ providerToAdd%5Bname%5D=&providerToAdd%5Baddress%5D=&providerToAdd%5Bcontact%5D=
     d["disp"],
     csrf
   )
-  print("Supposedly posted pickup :", data, "with id", "FUCK OFF")
-  #r = req.post(url, headers={"Cookie": "PHPSESSID={}".format(cookie)}, data=data)
-  r = {"success" : "test", "id": "ImJustSnacking"}
-  return r
+  res = req.post(url, data=data, headers={
+    "Cookie"            : "PHPSESSID={}".format(cookie),
+    "Accept"            : "*/*",
+    "Accept-Language"   : "en-US,en;q=0.5",
+    "Accept-Encoding"   : "gzip, deflate",
+    "Referer"           : "https://aaida.restosducoeur.org/pickups",
+    "Content-Type"      : "application/x-www-form-urlencoded;charset=UTF-8",
+    "Origin"            : "https://aaida.restosducoeur.org",
+    "ec-Fetch-Mode"     : "cors",
+    "Sec-Fetch-Site"    : "same-origin",
+    "TE"                : "trailers"
+})
+  #  'User-Agent: Used or abused' 'Accept: */*' -H 'Accept-Language: en-US,en;q=0.5' -H 'Accept-Encoding: gzip, deflate, br' -H 'Referer: https://aaida.restosducoeur.org/pickups' -H 'Content-Type: application/x-www-form-urlencoded;charset=UTF-8' -H 'Origin: https://aaida.restosducoeur.org' -H 'Connection: keep-alive' -H 'Cookie: PHPSESSID=407seiaiksf4h68bl1mspbra94' -H 'Sec-Fetch-Dest: empty' -H 'Sec-Fetch-Mode: cors' -H 'Sec-Fetch-Site: same-origin' -H 'TE: trailers' --data-raw 'createdAt=2023-10-04&provider=6788&providerToAdd%5Bname%5D=&providerToAdd%5Baddress%5D=&providerToAdd%5Bcontact%5D=&declaredWeight=235&realWeight=190&dispatchableWeight=190&_token=bbf78fe294c56da71344e57dc38d8dcf.v3_McnJmlW1nHITvgJooim9Wnd7JmXqJ-EvOWlfYqlM._km7Sh0H-lgWaue2x89t7wYA8POGzBfYtXKGb2KO0j3zJ4s_Jl7YOFZM4w'
+  res = res.json()
+  return res
 
 def add_distrib(cookie, csrf, d):
   """GET : Under the radar."""
@@ -151,8 +135,6 @@ if __name__ == "__main__":
   # Read inputs
   d = get_input(name)
   providers = load_providers()
-  #print(providers)
-
   # Check inputs
   # get_providers(cookie)
   codes = set(providers.values())
@@ -173,15 +155,15 @@ if __name__ == "__main__":
     print("csrf :", csrf)
     time.sleep(sleeping_time)
     rid = post_pickup(cookie, csrf, l)
-    l["rid"] = rid
+    #l["rid"] = rid
     print("rid :", rid)
     time.sleep(sleeping_time)
-    token = add_distrib(cookie, csrf, l)
-    print("token", token)
-    time.sleep(sleeping_time)
-    res = post_distrib(cookie, csrf, l)
-    print("Uplodaded :", res.text)
-    time.sleep(sleeping_time)
+  #  token = add_distrib(cookie, csrf, l)
+  #  print("token", token)
+  #  time.sleep(sleeping_time)
+  #  res = post_distrib(cookie, csrf, l)
+  #  print("Uplodaded :", res.text)
+  #  time.sleep(sleeping_time)
 
   ##res = get_pickups(csrf, cookie)
   ##print(res.json())
