@@ -64,8 +64,8 @@ def load_providers():
 def add_pickup(cookie):
   """GET : Let's get it started."""
   url = "https://aaida.restosducoeur.org/pickup/add"
-  HEADERS["Cookie"] = cookie
-  res = req.get(url, headers=HEADERS})
+  HEADERS["Cookie"] = "PHPSESSID={}".format(cookie)
+  res = req.get(url, headers=HEADERS)
   csrf = re.findall("name=\\\\u0022_token\\\\u0022 value=\\\\u0022(.*)\\\\u0022", res.text)[0]
   return csrf
 
@@ -86,18 +86,18 @@ _token={}""".format(
     d["disp"],
     csrf
   )
-  HEADERS["Cookie"] = cookie
+  HEADERS["Cookie"] = "PHPSESSID={}".format(cookie)
   res = req.post(url, data=data, headers=HEADERS)
-  #  'User-Agent: Used or abused' 'Accept: */*' -H 'Accept-Language: en-US,en;q=0.5' -H 'Accept-Encoding: gzip, deflate, br' -H 'Referer: https://aaida.restosducoeur.org/pickups' -H 'Content-Type: application/x-www-form-urlencoded;charset=UTF-8' -H 'Origin: https://aaida.restosducoeur.org' -H 'Connection: keep-alive' -H 'Cookie: PHPSESSID=407seiaiksf4h68bl1mspbra94' -H 'Sec-Fetch-Dest: empty' -H 'Sec-Fetch-Mode: cors' -H 'Sec-Fetch-Site: same-origin' -H 'TE: trailers' --data-raw 'createdAt=2023-10-04&provider=6788&providerToAdd%5Bname%5D=&providerToAdd%5Baddress%5D=&providerToAdd%5Bcontact%5D=&declaredWeight=235&realWeight=190&dispatchableWeight=190&_token=bbf78fe294c56da71344e57dc38d8dcf.v3_McnJmlW1nHITvgJooim9Wnd7JmXqJ-EvOWlfYqlM._km7Sh0H-lgWaue2x89t7wYA8POGzBfYtXKGb2KO0j3zJ4s_Jl7YOFZM4w'
   res = res.json()
-  return res
+  return res["id"]
 
 def add_distrib(cookie, csrf, d):
   """GET : Under the radar."""
   url = "https://aaida.restosducoeur.org/pickup/distribute/{}".format(d["rid"])
-  HEADERS["Cookie"] = cookie
+  HEADERS["Cookie"] = "PHPSESSID={}".format(cookie)
   res = req.get(url, headers=HEADERS)
-  token = re.findall("""name="distribution[_token]" value="([^"]*)""", res.text)[0]
+  # don't try this at home :
+  token = re.findall("""ion\\[_token\\]\\\\u0022 value=\\\\u0022([^\\\\]*)""", res.text)[0]
   return token
 
 def post_distrib(cookie, csrf, d):
@@ -117,9 +117,8 @@ distribution%5Baxis%5D%5B0%5D%5Bweight%5D={}\
   d["misc"],
   csrf
 )
-  HEADERS["Cookie"] = cookie
-  res = req.post(url, headers=HEADERS, data)
-  r = {"result" : "test"}
+  HEADERS["Cookie"] = "PHPSESSID={}".format(cookie)
+  res = req.post(url, headers=HEADERS, data=data)
   return res.text
 
 if __name__ == "__main__":
@@ -155,9 +154,9 @@ if __name__ == "__main__":
     token = add_distrib(cookie, csrf, l)
     print("token", token)
     time.sleep(sleeping_time)
-  #  res = post_distrib(cookie, csrf, l)
-  #  print("Uplodaded :", res.text)
-  #  time.sleep(sleeping_time)
+    res = post_distrib(cookie, csrf, l)
+    print("Uplodaded :", res)
+    time.sleep(sleeping_time)
 
   ##res = get_pickups(csrf, cookie)
   ##print(res.json())

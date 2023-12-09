@@ -3,6 +3,7 @@
 import sys
 import requests as req
 import re
+import json
 
 ## Used to retrieve providers codes
 def get_providers(cookie):
@@ -15,5 +16,5 @@ def get_providers(cookie):
 
 if __name__ == "__main__":
   d = get_providers(sys.argv[1])
-  res = [_ for _ in zip(*d)]
-  print(res)
+  res = dict(zip(*d))
+  print(json.dumps(res))
