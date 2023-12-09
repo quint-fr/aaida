@@ -4,6 +4,13 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+pyqt5 = "*"
+grequests = "*"
+pytesseract = "*"
+opencv-python-headless = "*"
+matplotlib = "*"
+pywayland = "*"
+
 
 [dev-packages]
 
