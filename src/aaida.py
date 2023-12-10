@@ -62,6 +62,10 @@ def load_providers():
   with open("prov.db") as f:
     return json.load(f)
 
+def load_translations():
+  with open("tran.db") as f:
+    return json.load(f)
+
 def add_pickup(cookie):
   """GET : Let's get it started."""
   url = "https://aaida.restosducoeur.org/pickup/add"
@@ -129,10 +133,13 @@ if __name__ == "__main__":
   # Read inputs
   d = get_input(name)
   providers = load_providers()
+  # get translation table
+  tt = load_translations()
   # Check inputs
-  # get_providers(cookie)
   codes = set(providers.values())
   for l in d:
+    print("preshoted :", l["code"], "exists as", tt.get(l["code"]))
+    l["code"] = tt.get(l["code"], l["code"])
     if l["code"] in providers:
       l["code"] = providers[l["code"]]
     if l["code"] not in codes:
