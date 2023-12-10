@@ -42,7 +42,7 @@ def get_input(name):
   """Retrieve donations value from csv"""
   with open(name) as f:
     res = []
-    for l in csv.DictReader(f, delimiter=";"):
+    for l in csv.DictReader(f, delimiter=","):
       if not l["real"]:
         l["real"] = l["decl"]
       if not l["disp"]:
