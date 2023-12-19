@@ -138,7 +138,7 @@ if __name__ == "__main__":
   # Check inputs
   codes = set(providers.values())
   for l in d:
-    print("preshoted :", l["code"], "exists as", tt.get(l["code"]))
+    print("preshoted :", l["code"], "exists as", tt.get(l["code"], "nothing"))
     l["code"] = tt.get(l["code"], l["code"])
     if l["code"] in providers:
       l["code"] = providers[l["code"]]
