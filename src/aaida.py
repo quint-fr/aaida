@@ -18,6 +18,7 @@ import random as rnd
 import requests as req
 import time
 
+DOS_SEC = 1
 HEADERS = {
     "Accept"            : "*/*",
     "Accept-Language"   : "en-US,en;q=0.5",
@@ -58,12 +59,8 @@ def get_input(name):
       res.append(l)
   return res
 
-def load_providers():
-  with open("prov.db") as f:
-    return json.load(f)
-
 def load_translations():
-  with open("tran.db") as f:
+  with open("prov_tr.db") as f:
     return json.load(f)
 
 def add_pickup(cookie):
@@ -132,11 +129,11 @@ if __name__ == "__main__":
 
   # Read inputs
   d = get_input(name)
-  providers = load_providers()
   # get translation table
   tt = load_translations()
+  providers = set(tt.keys())
+  codes = set(tt.values())
   # Check inputs
-  codes = set(providers.values())
   for l in d:
     print("preshoted :", l["code"], "exists as", tt.get(l["code"], "nothing"))
     l["code"] = tt.get(l["code"], l["code"])
@@ -147,24 +144,23 @@ if __name__ == "__main__":
       exit(57)
 
   # Sleep between each requests to avoid DDoS
-  sleeping_time = 3
-  print("Retrieved", len(d), "collect(s).")
+  print("Retrieved", len(d), "pickup(s).")
   for l in d:
     print("Adding", l)
     # Request new row
     csrf = add_pickup(cookie)
     print("csrf :", csrf)
-    time.sleep(sleeping_time)
+    time.sleep(DOS_SEC)
     rid = post_pickup(cookie, csrf, l)
     l["rid"] = rid
     print("rid :", rid)
-    time.sleep(sleeping_time)
+    time.sleep(DOS_SEC)
     csrf = add_distrib(cookie, csrf, l)
     print("token", csrf)
-    time.sleep(sleeping_time)
+    time.sleep(DOS_SEC)
     res = post_distrib(cookie, csrf, l)
     print("Uploaded :", res)
-    time.sleep(sleeping_time)
+    time.sleep(DOS_SEC)
 
   ##res = get_pickups(csrf, cookie)
   ##print(res.json())
